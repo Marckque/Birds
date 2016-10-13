@@ -1,4 +1,4 @@
 sceneSetups:
-- path: Assets/Scenes/Graybox.unity
+- path: Assets/Scenes/Snapshot.unity
   isLoaded: 1
   isActive: 1
