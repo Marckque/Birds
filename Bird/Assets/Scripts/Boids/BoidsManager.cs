@@ -3,6 +3,25 @@ using System.Collections.Generic;
 
 public class BoidsManager : BoidsParameters
 {
+    [Header("Boids parameters"), SerializeField]
+    private float m_MaxVelocity = 1f;
+    [SerializeField]
+    private float m_MaxAvoidanceForce = 1f;
+    [SerializeField]
+    private float m_AccelerationFactor = 1f;
+    [SerializeField]
+    private float m_DecelerationFactor = 1f;
+
+    // Behavior modifiers
+    [SerializeField]
+    private float m_ArriveFactor = 1f;
+    [SerializeField]
+    private float m_AvoidanceFactor = 1f;
+    [SerializeField]
+    private float m_MinimumDistanceToTarget = 1f;
+    [SerializeField]
+    private float m_MinimumDistanceToOtherBoid = 1f;
+
     [Header("BoidsManager parameters"), SerializeField]
     private Boid m_Boid;
     [SerializeField]
@@ -33,10 +52,7 @@ public class BoidsManager : BoidsParameters
     }
     #endregion Singleton
 
-    public List<Boid> Boids
-    {
-        get { return m_Boids; }
-    }
+    public List<Boid> Boids { get { return m_Boids; } }
 
     protected void Start()
     {
@@ -49,6 +65,8 @@ public class BoidsManager : BoidsParameters
         BoidListToIndividualBoids();
         SetBoidsTarget(m_InitialTarget);
         SetBoidsBehaviour(Behaviour.Fly);
+        SetBoidsBehaviourModifiers();
+        SetBoidsMovementModifiers();
     }
 
     private void CreateBoids()
@@ -84,5 +102,27 @@ public class BoidsManager : BoidsParameters
         {
             boid.SetTarget(a_Target);
         }
+    }
+
+    private void SetBoidsMovementModifiers()
+    {
+        foreach (Boid boid in m_Boids)
+        {
+            boid.SetMovementModifiers(m_MaxVelocity, m_MaxAvoidanceForce, m_AccelerationFactor, m_DecelerationFactor);
+        }
+    }
+
+    private void SetBoidsBehaviourModifiers()
+    {
+        foreach (Boid boid in m_Boids)
+        {
+            boid.SetBehaviorModifers(m_ArriveFactor, m_AvoidanceFactor, m_MinimumDistanceToTarget, m_MinimumDistanceToOtherBoid);
+        }
+    }
+
+    protected void OnValidate()
+    {
+        SetBoidsBehaviourModifiers();
+        SetBoidsMovementModifiers();
     }
 }

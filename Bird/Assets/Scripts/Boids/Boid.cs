@@ -24,15 +24,15 @@ public class Boid : BoidsParameters
     public List<Boid> OtherBoids { get; set; }
 
     #region Modifiers
-    private void SetMovementModifiers(float a_MaxVelocity, float a_MaxSteeringForce, float a_AccelerationFactor, float a_DecelerationFactor)
+    public void SetMovementModifiers(float a_MaxVelocity, float a_MaxAvoidanceForce, float a_AccelerationFactor, float a_DecelerationFactor)
     {
         m_MaxVelocity = a_MaxVelocity;
-        m_MaxAvoidanceForce = a_MaxSteeringForce;
+        m_MaxAvoidanceForce = a_MaxAvoidanceForce;
         m_AccelerationFactor = a_AccelerationFactor;
         m_DecelerationFactor = a_DecelerationFactor;
     }
 
-    private void SetBehaviorModifers(float a_ArriveFactor, float a_AvoidanceFactor, float a_MinimumDistanceToTarget, float a_MinimumDistanceToOtherBoid)
+    public void SetBehaviorModifers(float a_ArriveFactor, float a_AvoidanceFactor, float a_MinimumDistanceToTarget, float a_MinimumDistanceToOtherBoid)
     {
         m_ArriveFactor = a_ArriveFactor;
         m_AvoidanceFactor = a_AvoidanceFactor;
@@ -40,11 +40,6 @@ public class Boid : BoidsParameters
         m_MinimumDistanceToOtherBoid = a_MinimumDistanceToOtherBoid;
     }
     #endregion Modifiers
-
-    protected void Start()
-    {
-	
-	}
 	
 	protected void Update()
     {
@@ -85,10 +80,6 @@ public class Boid : BoidsParameters
 
         switch(CurrentBehaviour)
         {
-            case Behaviour.Idle:
-                Idle();
-                break;
-
             case Behaviour.TakeOff:
                 TakeOff();
                 break;
@@ -100,7 +91,12 @@ public class Boid : BoidsParameters
 
             case Behaviour.Land:
                 Land();
-                break; 
+                break;
+
+            case Behaviour.Idle:
+            default:
+                Idle();
+                break;
         }
     }
 
