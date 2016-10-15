@@ -15,7 +15,6 @@ public class Boid : BoidsParameters
     // Behavior modifiers
     private float m_ArriveFactor = 1f;
     private float m_AvoidanceFactor = 1f;
-    //private float m_SolidAvoidanceFactor = 1f;
     private float m_MinimumDistanceToTarget = 1f;
     private float m_MinimumDistanceToOtherBoid = 1f;
 
@@ -191,12 +190,8 @@ public class Boid : BoidsParameters
 
     private Vector3 AvoidSolid(Collision a_Solid)
     {
-        print("I avoid the solid.");
-
         Vector3 desiredVelocity = Vector3.zero;
         Vector3 closestPoint = a_Solid.contacts[0].point;
-
-        Debug.DrawLine(transform.position, closestPoint, Color.red);
 
         Vector3 oppositeDirection = transform.position - closestPoint;
 
@@ -209,18 +204,20 @@ public class Boid : BoidsParameters
         Vector3 steer = desiredVelocity - m_CurrentVelocity;
         steer *= m_AvoidanceFactor;
         Vector3.ClampMagnitude(steer, m_MaxAvoidanceForce);
+
+        // TO DO: Remove ; Debug purposes only
+        Debug.DrawLine(transform.position, steer, Color.yellow);
+
         return steer;
     }
 
-    protected void OnCollisionEnter(Collision a_Solid)
+    protected void OnCollisionStay(Collision a_Solid)
     {
-        print("OnCollisionEnter");
         Solid solid = a_Solid.collider.GetComponent<Solid>();
 
         if (solid is Solid)
         {
-            //print("I am a solid.");
-            AvoidSolid(a_Solid);
+            UpdateAcceleration(AvoidSolid(a_Solid));
         }
     }
     #endregion Behaviours
