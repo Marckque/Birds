@@ -15,6 +15,7 @@ public class Boid : BoidsParameters
     // Behavior modifiers
     private float m_ArriveFactor = 1f;
     private float m_AvoidanceFactor = 1f;
+    //private float m_SolidAvoidanceFactor = 1f;
     private float m_MinimumDistanceToTarget = 1f;
     private float m_MinimumDistanceToOtherBoid = 1f;
 
@@ -80,8 +81,11 @@ public class Boid : BoidsParameters
     private void UpdateBehaviour()
     {
         // TO DO: Make sure it works with idle... Because I think it will not work.
-        UpdateAcceleration(AvoidOtherBoids());
-        RotateTowardsDirection();
+        if (CurrentBehaviour != Behaviour.Idle)
+        {
+            UpdateAcceleration(AvoidOtherBoids());
+            RotateTowardsDirection();
+        }
 
         switch(CurrentBehaviour)
         {
@@ -183,6 +187,41 @@ public class Boid : BoidsParameters
         }
 
         return Vector3.zero;
+    }
+
+    private Vector3 AvoidSolid(Collision a_Solid)
+    {
+        print("I avoid the solid.");
+
+        Vector3 desiredVelocity = Vector3.zero;
+        Vector3 closestPoint = a_Solid.contacts[0].point;
+
+        Debug.DrawLine(transform.position, closestPoint, Color.red);
+
+        Vector3 oppositeDirection = transform.position - closestPoint;
+
+        float distanceToSolid = oppositeDirection.sqrMagnitude;
+
+        oppositeDirection.Normalize();
+        oppositeDirection /= distanceToSolid;
+        desiredVelocity += oppositeDirection;
+
+        Vector3 steer = desiredVelocity - m_CurrentVelocity;
+        steer *= m_AvoidanceFactor;
+        Vector3.ClampMagnitude(steer, m_MaxAvoidanceForce);
+        return steer;
+    }
+
+    protected void OnCollisionEnter(Collision a_Solid)
+    {
+        print("OnCollisionEnter");
+        Solid solid = a_Solid.collider.GetComponent<Solid>();
+
+        if (solid is Solid)
+        {
+            //print("I am a solid.");
+            AvoidSolid(a_Solid);
+        }
     }
     #endregion Behaviours
 }
