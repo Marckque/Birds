@@ -3,6 +3,9 @@ using System.Collections.Generic;
 
 public class Boid : BoidsParameters
 {
+    [SerializeField]
+    private float m_RotationSpeed;
+
     // Movement modifiers
     private float m_MaxVelocity = 1f;
     private float m_MaxAvoidanceForce = 1f;
@@ -76,7 +79,9 @@ public class Boid : BoidsParameters
 
     private void UpdateBehaviour()
     {
+        // TO DO: Make sure it works with idle... Because I think it will not work.
         UpdateAcceleration(AvoidOtherBoids());
+        RotateTowardsDirection();
 
         switch(CurrentBehaviour)
         {
@@ -144,7 +149,7 @@ public class Boid : BoidsParameters
     // Other behaviours
     private void RotateTowardsDirection()
     {
-        // Rotates the boid towards its movement direction... We might not want this every time.
+        transform.rotation = Quaternion.Lerp(transform.rotation, Quaternion.LookRotation(m_CurrentVelocity), m_RotationSpeed * Time.deltaTime);
     }
 
     private Vector3 AvoidOtherBoids()
