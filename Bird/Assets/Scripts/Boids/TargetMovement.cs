@@ -75,17 +75,18 @@ public class TargetMovement : MonoBehaviour
         }
     }
 
+    /*
     protected void OnCollisionEnter(Collision a_Solid)
     {
         if (!m_IsAvoiding)
         {
             m_IsAvoiding = true;
-            print("ENTER_001");
+            
             Solid solid = a_Solid.collider.GetComponent<Solid>();
 
             if (solid is Solid)
             {
-                print("ENTER_002");
+                
                 m_Avoid = true;
             }
         }
@@ -96,16 +97,17 @@ public class TargetMovement : MonoBehaviour
         if (m_IsAvoiding)
         {
             m_IsAvoiding = false;
-            print("EXIT_001");
+            
             Solid solid = a_Solid.collider.GetComponent<Solid>();
 
             if (solid is Solid)
             {
-                print("EXIT_002");
+                
                 m_Avoid = false;
             }
         }
     }
+    */
 
     protected void OnDrawGizmos()
     {

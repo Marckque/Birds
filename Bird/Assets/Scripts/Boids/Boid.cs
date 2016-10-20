@@ -8,7 +8,6 @@ public class Boid : BoidsParameters
 
     // Movement modifiers
     private float m_MaxVelocity = 1f;
-    // TO DO: Add MaxAvoidanceForceSOLID and MaxAvoidanceForceBOIDS // Separate both stuff
     private float m_MaxBoidsAvoidanceForce = 1f;
     private float m_MaxSolidsAvoidanceForce = 1f;
     private float m_AccelerationFactor = 1f;
@@ -278,22 +277,11 @@ public class Boid : BoidsParameters
 
         if (solid is Solid)
         {
-            //UpdateAcceleration(AvoidSolid(a_Solid));
+            UpdateAcceleration(AvoidSolid(a_Solid));
             //DetermineSolidAvoidanceDirection(a_Solid);
         }
     }
 
-    /*
-    protected void OnCollisionExit(Collision a_Solid)
-    {
-        Solid solid = a_Solid.collider.GetComponent<Solid>();
-
-        if (solid is Solid)
-        {
-            m_AvoidsSolid = false;
-        }
-    }
-    */
     #endregion AvoidanceBehaviours
     #endregion Behaviours
 }
