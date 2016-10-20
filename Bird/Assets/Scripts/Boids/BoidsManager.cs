@@ -3,23 +3,27 @@ using System.Collections.Generic;
 
 public class BoidsManager : BoidsParameters
 {
-    [Header("Boids parameters"), SerializeField]
+    [Header("Boids parameters"), SerializeField, Range(0.001f, 10f)]
     private float m_MaxVelocity = 1f;
-    [SerializeField]
-    private float m_MaxAvoidanceForce = 1f;
-    [SerializeField]
+    [SerializeField, Range(0.001f, 10f)]
+    private float m_MaxBoidsAvoidanceForce = 1f;
+    [SerializeField, Range(0.001f, 10f)]
+    private float m_MaxSolidsAvoidanceForce = 1f;
+    [SerializeField, Range(0.001f, 10f)]
     private float m_AccelerationFactor = 1f;
-    [SerializeField]
+    [SerializeField, Range(0.001f, 10f)]
     private float m_DecelerationFactor = 1f;
 
     // Behavior modifiers
-    [SerializeField]
+    [SerializeField, Range(0.001f, 10f)]
     private float m_ArriveFactor = 1f;
-    [SerializeField]
-    private float m_AvoidanceFactor = 1f;
-    [SerializeField]
+    [SerializeField, Range(0.001f, 10f)]
+    private float m_BoidAvoidanceFactor = 1f;
+    [SerializeField, Range(0.001f, 10f)]
+    private float m_SolidAvoidanceFactor = 1f;
+    [SerializeField, Range(0.001f, 10f)]
     private float m_MinimumDistanceToTarget = 1f;
-    [SerializeField]
+    [SerializeField, Range(0.001f, 10f)]
     private float m_MinimumDistanceToOtherBoid = 1f;
 
     [Header("BoidsManager parameters"), SerializeField]
@@ -108,7 +112,7 @@ public class BoidsManager : BoidsParameters
     {
         foreach (Boid boid in m_Boids)
         {
-            boid.SetMovementModifiers(m_MaxVelocity, m_MaxAvoidanceForce, m_AccelerationFactor, m_DecelerationFactor);
+            boid.SetMovementModifiers(m_MaxVelocity, m_MaxBoidsAvoidanceForce, m_MaxSolidsAvoidanceForce, m_AccelerationFactor, m_DecelerationFactor);
         }
     }
 
@@ -116,7 +120,7 @@ public class BoidsManager : BoidsParameters
     {
         foreach (Boid boid in m_Boids)
         {
-            boid.SetBehaviorModifers(m_ArriveFactor, m_AvoidanceFactor, m_MinimumDistanceToTarget, m_MinimumDistanceToOtherBoid);
+            boid.SetBehaviorModifers(m_ArriveFactor, m_BoidAvoidanceFactor, m_SolidAvoidanceFactor, m_MinimumDistanceToTarget, m_MinimumDistanceToOtherBoid);
         }
     }
 

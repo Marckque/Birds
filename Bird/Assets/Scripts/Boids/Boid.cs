@@ -8,17 +8,23 @@ public class Boid : BoidsParameters
 
     // Movement modifiers
     private float m_MaxVelocity = 1f;
-    private float m_MaxAvoidanceForce = 1f;
+    // TO DO: Add MaxAvoidanceForceSOLID and MaxAvoidanceForceBOIDS // Separate both stuff
+    private float m_MaxBoidsAvoidanceForce = 1f;
+    private float m_MaxSolidsAvoidanceForce = 1f;
     private float m_AccelerationFactor = 1f;
     private float m_DecelerationFactor = 1f;  
 
     // Behavior modifiers
     private float m_ArriveFactor = 1f;
-    private float m_AvoidanceFactor = 1f;
+    private float m_BoidAvoidanceFactor = 1f;
+    private float m_SolidAvoidanceFactor = 1f;
     private float m_MinimumDistanceToTarget = 1f;
     private float m_MinimumDistanceToOtherBoid = 1f;
 
     // Other
+    private bool m_AvoidsSolid;
+    private Solid m_SolidToAvoid;
+
     private Transform m_Target;
     private Vector3 m_Acceleration;
     private Vector3 m_CurrentVelocity;
@@ -27,24 +33,26 @@ public class Boid : BoidsParameters
     public List<Boid> OtherBoids { get; set; }
 
     #region Modifiers
-    public void SetMovementModifiers(float a_MaxVelocity, float a_MaxAvoidanceForce, float a_AccelerationFactor, float a_DecelerationFactor)
+    public void SetMovementModifiers(float a_MaxVelocity, float a_MaxAvoidanceForce, float a_MaxSolidsAvoidanceForce, float a_AccelerationFactor, float a_DecelerationFactor)
     {
         m_MaxVelocity = a_MaxVelocity;
-        m_MaxAvoidanceForce = a_MaxAvoidanceForce;
+        m_MaxBoidsAvoidanceForce = a_MaxAvoidanceForce;
+        m_MaxSolidsAvoidanceForce = a_MaxSolidsAvoidanceForce;
         m_AccelerationFactor = a_AccelerationFactor;
         m_DecelerationFactor = a_DecelerationFactor;
     }
 
-    public void SetBehaviorModifers(float a_ArriveFactor, float a_AvoidanceFactor, float a_MinimumDistanceToTarget, float a_MinimumDistanceToOtherBoid)
+    public void SetBehaviorModifers(float a_ArriveFactor, float a_BoidAvoidanceFactor, float a_SolidAvoidanceFactor, float a_MinimumDistanceToTarget, float a_MinimumDistanceToOtherBoid)
     {
         m_ArriveFactor = a_ArriveFactor;
-        m_AvoidanceFactor = a_AvoidanceFactor;
+        m_BoidAvoidanceFactor = a_BoidAvoidanceFactor;
+        m_SolidAvoidanceFactor = a_SolidAvoidanceFactor;
         m_MinimumDistanceToTarget = a_MinimumDistanceToTarget;
         m_MinimumDistanceToOtherBoid = a_MinimumDistanceToOtherBoid;
     }
     #endregion Modifiers
 	
-	protected void Update()
+	protected void FixedUpdate()
     {
         UpdateBehaviour();
 	}
@@ -84,6 +92,7 @@ public class Boid : BoidsParameters
         {
             UpdateAcceleration(AvoidOtherBoids());
             RotateTowardsDirection();
+            UpdateVelocity();
         }
 
         switch(CurrentBehaviour)
@@ -94,7 +103,6 @@ public class Boid : BoidsParameters
 
             case Behaviour.Fly:
                 UpdateAcceleration(Fly());
-                UpdateVelocity();
                 break;
 
             case Behaviour.Land:
@@ -108,7 +116,8 @@ public class Boid : BoidsParameters
         }
     }
 
-    // Based on: private enum CurrentBehaviour { Idle, TakeOff, Fly, Land };
+    #region BasedOnBehaviourEnum
+    // Based on: private enum Behaviour { Idle, TakeOff, Fly, Land };
     private void Idle()
     {
         // Stand still
@@ -148,6 +157,7 @@ public class Boid : BoidsParameters
     {
 
     }
+    #endregion BasedOnBehaviourEnum
 
     // Other behaviours
     private void RotateTowardsDirection()
@@ -155,6 +165,7 @@ public class Boid : BoidsParameters
         transform.rotation = Quaternion.Lerp(transform.rotation, Quaternion.LookRotation(m_CurrentVelocity), m_RotationSpeed * Time.deltaTime);
     }
 
+    #region AvoidanceBehaviours
     private Vector3 AvoidOtherBoids()
     {
         int numberOfCloseBoids = 0;
@@ -180,8 +191,8 @@ public class Boid : BoidsParameters
             desiredVelocity /= numberOfCloseBoids;
 
             Vector3 steer = desiredVelocity - m_CurrentVelocity;
-            steer *= m_AvoidanceFactor;
-            Vector3.ClampMagnitude(steer, m_MaxAvoidanceForce);
+            steer *= m_BoidAvoidanceFactor;
+            Vector3.ClampMagnitude(steer, m_MaxBoidsAvoidanceForce);
             return steer;
         }
 
@@ -202,8 +213,58 @@ public class Boid : BoidsParameters
         desiredVelocity += oppositeDirection;
 
         Vector3 steer = desiredVelocity - m_CurrentVelocity;
-        steer *= m_AvoidanceFactor;
-        Vector3.ClampMagnitude(steer, m_MaxAvoidanceForce);
+        steer *= m_SolidAvoidanceFactor;
+        Vector3.ClampMagnitude(steer, m_MaxBoidsAvoidanceForce);
+
+        // TO DO: Remove ; Debug purposes only
+        //Debug.DrawLine(transform.position, steer, Color.yellow);
+
+        return steer;
+    }
+
+    private Vector3 DetermineSolidAvoidanceDirection(Collision a_Solid)
+    {
+        Vector3 desiredVelocity = Vector3.zero;
+
+        Vector3 closestExitPoint = Vector3.zero;
+        float newClosestExitPointX = 0;
+        float newClosestExitPointY = 0;
+        //float newClosestExitPointZ = 0;
+
+        Vector3 closestCollisionPoint = a_Solid.contacts[0].point;
+
+        // X desired velocity
+        /*
+        if (closestCollisionPoint.x <= a_Solid.collider.bounds.center.x)
+        {
+            newClosestExitPointX = a_Solid.collider.bounds.min.x;
+        }
+        else
+        {
+            newClosestExitPointX = a_Solid.collider.bounds.max.x;
+        }
+        */
+        // Y desired velocity
+        newClosestExitPointY = a_Solid.collider.bounds.max.x * 3;
+
+        // Z desired velocity
+        // To do: think about whether or not we actually do need that one
+        /*
+        if (closestCollisionPoint.z <= a_Solid.collider.bounds.center.z)
+        {
+            newClosestExitPointZ = a_Solid.collider.bounds.min.z;
+        }
+        else
+        {
+            newClosestExitPointZ = a_Solid.collider.bounds.max.z;
+        }
+
+    */
+        desiredVelocity = new Vector3(newClosestExitPointX, newClosestExitPointY, 0);
+
+        Vector3 steer = desiredVelocity - m_CurrentVelocity;
+        steer *= m_SolidAvoidanceFactor;
+        Vector3.ClampMagnitude(steer, m_MaxSolidsAvoidanceForce);
 
         // TO DO: Remove ; Debug purposes only
         Debug.DrawLine(transform.position, steer, Color.yellow);
@@ -217,8 +278,22 @@ public class Boid : BoidsParameters
 
         if (solid is Solid)
         {
-            UpdateAcceleration(AvoidSolid(a_Solid));
+            //UpdateAcceleration(AvoidSolid(a_Solid));
+            //DetermineSolidAvoidanceDirection(a_Solid);
         }
     }
+
+    /*
+    protected void OnCollisionExit(Collision a_Solid)
+    {
+        Solid solid = a_Solid.collider.GetComponent<Solid>();
+
+        if (solid is Solid)
+        {
+            m_AvoidsSolid = false;
+        }
+    }
+    */
+    #endregion AvoidanceBehaviours
     #endregion Behaviours
 }
