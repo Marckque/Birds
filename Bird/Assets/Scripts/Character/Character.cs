@@ -2,129 +2,83 @@
 
 public class Character : MonoBehaviour
 {
-    [Header("Movement"), SerializeField, Range(0f, 10f)]
+    [Header("Rigidbody"), SerializeField]
+    private Rigidbody m_Rigidbody;
+    [SerializeField, Range(0.2f, 3f)]
+    private float m_GravityOffset = 0.2f;
+
+    private const float RIGIDBODY_MULTIPLIER = 500f;
+
+    [Header("Movement"), SerializeField, Range(0f, 100f)]
     private float m_Acceleration;
-    [SerializeField, Range(0f, 10f)]
+    [SerializeField, Range(0f, 100f)]
     private float m_Deceleration;
     [SerializeField, Range(0f, 100f)]
-    private float m_MaxMovementSpeed;
-    private float m_CurrentSpeed;
+    private float m_MaxVelocity;
+    private float m_CurrentVelocity;
     private Vector3 m_MovementDirection;
     private Vector3 m_LastMovementDirection;
 
-    [Header("Mouse"), SerializeField]
-    private float m_MouseSpeedX;
-    [SerializeField]
-    private float m_MouseSpeedY;
-    [SerializeField, Range(0f, 10f)]
-    private float m_SmoothSpeed;
-
-    private bool m_CursorIsLocked = true;
-    private Quaternion m_TargetRotation;
-    private Quaternion m_CameraTargetRotation;
-
-    [Header("Camera"), SerializeField]
-    private Transform m_CameraTransform;
-
-    protected void Start()
-    {
-        InitialiseMouse();
-        InitialiseTargetRotation();
-    }
-
-    private void InitialiseMouse()
-    {
-        Cursor.lockState = CursorLockMode.Locked;
-    }
-
-    private void InitialiseTargetRotation()
-    {
-        m_TargetRotation = transform.localRotation;
-        m_CameraTargetRotation = m_CameraTransform.localRotation;
-    }
-
     protected void Update()
     {
-        // Movement
         GetKeyboardInput();
-        Move();
-
-        // Mouse
-        GetMouseInput();
-        LockUpdate();
 	}
+
+    protected void FixedUpdate()
+    {
+        ApplyGravity();
+        CalculateVelocity();
+        Move();
+    }
 
     private void GetKeyboardInput()
     {
         m_MovementDirection = new Vector3(Input.GetAxisRaw("Horizontal"), 0, Input.GetAxisRaw("Vertical")).normalized;
     }
 
-    private void Move()
+    private void CalculateVelocity()
     {
         if (m_MovementDirection != Vector3.zero)
         {
             m_LastMovementDirection = m_MovementDirection;
-            m_CurrentSpeed = Mathf.Lerp(0, m_MaxMovementSpeed, Time.deltaTime * m_Acceleration);
+
+            m_CurrentVelocity = Mathf.Lerp(0, m_MaxVelocity, m_Acceleration * Time.fixedDeltaTime * RIGIDBODY_MULTIPLIER);
         }
         else
         {
-            m_CurrentSpeed = Mathf.Lerp(m_CurrentSpeed, 0, Time.deltaTime * m_Deceleration);
+            m_CurrentVelocity = Mathf.Lerp(m_CurrentVelocity, 0, m_Deceleration * Time.fixedDeltaTime * RIGIDBODY_MULTIPLIER);
         }
-
-        transform.Translate(m_LastMovementDirection * m_CurrentSpeed * Time.deltaTime);
     }
 
-    private void LockUpdate()
+    private void Move()
     {
-        if (Input.GetKeyUp(KeyCode.Escape))
+        Vector3 newForce = m_LastMovementDirection * m_CurrentVelocity * Time.fixedDeltaTime * RIGIDBODY_MULTIPLIER;
+        newForce = Vector3.ClampMagnitude(newForce, m_MaxVelocity);
+
+        m_Rigidbody.AddRelativeForce(newForce);
+    }
+
+    private void ApplyGravity()
+    {
+        Ray ray = new Ray(GetComponent<CapsuleCollider>().bounds.min, Vector3.down);
+        RaycastHit hit;
+
+        if (Physics.Raycast(ray, out hit, Mathf.Infinity))
         {
-            if (m_CursorIsLocked)
+            if (hit.distance > m_GravityOffset)
             {
-                m_CursorIsLocked = false;
+                m_Rigidbody.useGravity = true;
             }
-            else
-            {
-                m_CursorIsLocked = true;
-            }
-        }
-
-        if (m_CursorIsLocked)
-        {
-            Cursor.lockState = CursorLockMode.Locked;
-            Cursor.visible = false;
-        }
-        else
-        {
-            Cursor.lockState = CursorLockMode.None;
-            Cursor.visible = true;
         }
     }
 
-    private void GetMouseInput()
+    protected void OnCollisionEnter(Collision a_Other)
     {
-        float rotationY = Input.GetAxis("Mouse X") * m_MouseSpeedX;
-        float rotationX = Input.GetAxis("Mouse Y") * m_MouseSpeedY;
+        Solid solid = a_Other.collider.GetComponent<Solid>();
 
-        m_TargetRotation *= Quaternion.Euler(0f, rotationY, 0f);
-        m_CameraTargetRotation *= Quaternion.Euler(-rotationX, 0f, 0f);
-
-        m_CameraTransform.localRotation = ClampCameraRotation(m_CameraTransform.localRotation);
-
-        transform.localRotation = Quaternion.Slerp(transform.localRotation, m_TargetRotation, Time.deltaTime * m_SmoothSpeed);
-        m_CameraTransform.localRotation = Quaternion.Slerp(m_CameraTransform.localRotation, m_CameraTargetRotation, Time.deltaTime * m_SmoothSpeed);
-    }
-
-    private Quaternion ClampCameraRotation(Quaternion a_CameraRotation)
-    {
-        a_CameraRotation.x /= a_CameraRotation.w;
-        a_CameraRotation.y /= a_CameraRotation.w;
-        a_CameraRotation.z /= a_CameraRotation.w;
-        a_CameraRotation.w = 1.0f;
-
-        float angleX = 2.0f * Mathf.Rad2Deg * Mathf.Atan(a_CameraRotation.x);
-        angleX = Mathf.Clamp(angleX, -90, 90);
-        a_CameraRotation.x = Mathf.Tan(0.5f * Mathf.Deg2Rad * angleX);
-
-        return a_CameraRotation;
+        if (solid is Solid)
+        {
+            m_Rigidbody.useGravity = false;
+        }
     }
 }

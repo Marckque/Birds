@@ -237,12 +237,14 @@ public class Boid : BoidsParameters
         if (closestCollisionPoint.x <= a_Solid.collider.bounds.center.x)
         {
             //print("X - INFERIOR");
-            newClosestExitPointX = a_Solid.collider.bounds.min.x;
+            //newClosestExitPointX = a_Solid.collider.bounds.min.x;
+            newClosestExitPointX = -1;
         }
         else
         {
             //print("X - SUPERIOR");
-            newClosestExitPointX = a_Solid.collider.bounds.max.x;
+            //newClosestExitPointX = a_Solid.collider.bounds.max.x;
+            newClosestExitPointX = 1;
         }
 
         // Y desired velocity
@@ -254,30 +256,35 @@ public class Boid : BoidsParameters
             if (Physics.Raycast(ray, out hit, Mathf.Infinity, 8))
             {
                 //print("Y - INFERIOR + GROUND");
-                newClosestExitPointY = a_Solid.collider.bounds.max.y + 1f;
+                //newClosestExitPointY = a_Solid.collider.bounds.max.y + 1f;
+                newClosestExitPointY = 1;
             }
             else
             {
                 //print("Y - INFERIOR");
-                newClosestExitPointY = a_Solid.collider.bounds.min.y - 1f;
+                //newClosestExitPointY = a_Solid.collider.bounds.min.y - 1f;
+                newClosestExitPointY = -1;
             }
         }
         else
         {
             //print("Y - SUPERIOR");
-            newClosestExitPointY = a_Solid.collider.bounds.max.y + 1f;
+            //newClosestExitPointY = a_Solid.collider.bounds.max.y + 1f;
+            newClosestExitPointY = 1;
         }
 
         // Z desired velocity
         if (closestCollisionPoint.z <= a_Solid.collider.bounds.center.z)
         {
             //print("Z - INFERIOR");
-            newClosestExitPointZ = a_Solid.collider.bounds.min.z;
+            //newClosestExitPointZ = a_Solid.collider.bounds.min.z;
+            newClosestExitPointZ = -1;
         }
         else
         {
             //print("Z - SUPERIOR");
-            newClosestExitPointZ = a_Solid.collider.bounds.max.z;
+            //newClosestExitPointZ = a_Solid.collider.bounds.max.z;
+            newClosestExitPointZ = 1;
         }
 
         desiredVelocity = closestCollisionPoint + new Vector3(newClosestExitPointX, newClosestExitPointY, newClosestExitPointZ).normalized * 0.02f;
@@ -294,11 +301,9 @@ public class Boid : BoidsParameters
 
     protected void OnCollisionStay(Collision a_Solid)
     {
-        Solid solid = a_Solid.collider.GetComponent<Solid>();
-
-        if (solid is Solid)
+        if (a_Solid.gameObject.layer == 9)
         {
-            //UpdateAcceleration(AvoidSolid(a_Solid));
+            print("Allo");
             UpdateAcceleration(DetermineSolidAvoidanceDirection(a_Solid));
         }
     }
