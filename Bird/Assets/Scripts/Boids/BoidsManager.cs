@@ -31,6 +31,8 @@ public class BoidsManager : BoidsParameters
     [SerializeField]
     private int m_NumberOfBoids;
     [SerializeField]
+    private Transform m_BoidsContainer;
+    [SerializeField]
     private Transform m_InitialTarget;
 
     private List<Boid> m_Boids = new List<Boid>();
@@ -79,6 +81,7 @@ public class BoidsManager : BoidsParameters
         {
             // TO DO: Find a better position to instantiate the boids!
             Boid boid = Instantiate(m_Boid, new Vector3(i * 5, 0, i * 5), Quaternion.identity) as Boid;
+            boid.transform.SetParent(m_BoidsContainer);
             m_Boids.Add(boid);
         }
     }

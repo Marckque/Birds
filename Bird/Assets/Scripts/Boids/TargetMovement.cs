@@ -34,7 +34,6 @@ public class TargetMovement : MonoBehaviour
 	protected void FixedUpdate()
     {
         UpdateCurrentBehaviour();
-        UpdateAvoidBehaviour();
 	}
 
     private void UpdateCurrentBehaviour()
@@ -62,52 +61,6 @@ public class TargetMovement : MonoBehaviour
         // TO DO: Remove the magic number for the Y value
         transform.position = new Vector3(x, m_TargetHeight, z);
     }
-
-    private void UpdateAvoidBehaviour()
-    {
-        if (m_Avoid)
-        {
-            m_TargetHeight = Mathf.Lerp(m_TargetHeight, m_TargetHeight + m_AvoidanceSpeed * Time.deltaTime, m_AnotherSpeed * Time.deltaTime);
-        }
-        else
-        {
-            m_TargetHeight = Mathf.Lerp(m_TargetHeight, m_DefaultHeight, m_AnotherSpeed * Time.deltaTime);
-        }
-    }
-
-    /*
-    protected void OnCollisionEnter(Collision a_Solid)
-    {
-        if (!m_IsAvoiding)
-        {
-            m_IsAvoiding = true;
-            
-            Solid solid = a_Solid.collider.GetComponent<Solid>();
-
-            if (solid is Solid)
-            {
-                
-                m_Avoid = true;
-            }
-        }
-    }
-
-    protected void OnCollisionExit(Collision a_Solid)
-    {
-        if (m_IsAvoiding)
-        {
-            m_IsAvoiding = false;
-            
-            Solid solid = a_Solid.collider.GetComponent<Solid>();
-
-            if (solid is Solid)
-            {
-                
-                m_Avoid = false;
-            }
-        }
-    }
-    */
 
     protected void OnDrawGizmos()
     {
