@@ -15,6 +15,8 @@ public class MouseControls : MonoBehaviour
 
     [Header("Camera"), SerializeField]
     private Transform m_CameraTransform;
+    [SerializeField, Range(0f, 2f)]
+    private float m_CameraOffsetY;
     [SerializeField, Range(0f, 1f)]
     private float m_CameraOffsetZ;
 
@@ -97,6 +99,6 @@ public class MouseControls : MonoBehaviour
 
     protected void OnValidate()
     {
-        m_CameraTransform.localPosition = new Vector3(0, 0, -m_CameraOffsetZ);
+        m_CameraTransform.localPosition = new Vector3(0, m_CameraOffsetY, -m_CameraOffsetZ);
     }
 }

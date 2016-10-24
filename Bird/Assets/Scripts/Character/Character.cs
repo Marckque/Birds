@@ -9,11 +9,11 @@ public class Character : MonoBehaviour
 
     private const float RIGIDBODY_MULTIPLIER = 500f;
 
-    [Header("Movement"), SerializeField, Range(0f, 100f)]
+    [Header("Movement"), SerializeField, Range(0f, 200f)]
     private float m_Acceleration;
-    [SerializeField, Range(0f, 100f)]
+    [SerializeField, Range(0f, 200f)]
     private float m_Deceleration;
-    [SerializeField, Range(0f, 100f)]
+    [SerializeField, Range(0f, 200f)]
     private float m_MaxVelocity;
     private float m_CurrentVelocity;
     private Vector3 m_MovementDirection;
@@ -42,11 +42,11 @@ public class Character : MonoBehaviour
         {
             m_LastMovementDirection = m_MovementDirection;
 
-            m_CurrentVelocity = Mathf.Lerp(0, m_MaxVelocity, m_Acceleration * Time.fixedDeltaTime * RIGIDBODY_MULTIPLIER);
+            m_CurrentVelocity = Mathf.Lerp(0, m_MaxVelocity, m_Acceleration * Time.fixedDeltaTime);
         }
         else
         {
-            m_CurrentVelocity = Mathf.Lerp(m_CurrentVelocity, 0, m_Deceleration * Time.fixedDeltaTime * RIGIDBODY_MULTIPLIER);
+            m_CurrentVelocity = Mathf.Lerp(m_CurrentVelocity, 0, m_Deceleration * Time.fixedDeltaTime);
         }
     }
 
