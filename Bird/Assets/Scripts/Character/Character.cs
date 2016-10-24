@@ -2,12 +2,14 @@
 
 public class Character : MonoBehaviour
 {
-    [Header("Rigidbody"), SerializeField]
-    private Rigidbody m_Rigidbody;
-    [SerializeField, Range(0.2f, 3f)]
-    private float m_GravityOffset = 0.2f;
-
     private const float RIGIDBODY_MULTIPLIER = 500f;
+
+    [Header("Components"), SerializeField]
+    private Rigidbody m_Rigidbody;
+    [SerializeField]
+    private CapsuleCollider m_CapsuleCollider;
+    [SerializeField, Range(0.01f, 2f)]
+    private float m_GravityOffset = 0.2f;
 
     [Header("Movement"), SerializeField, Range(0f, 200f)]
     private float m_Acceleration;
@@ -60,7 +62,8 @@ public class Character : MonoBehaviour
 
     private void ApplyGravity()
     {
-        Ray ray = new Ray(GetComponent<CapsuleCollider>().bounds.min, Vector3.down);
+        Vector3 rayOrigin = new Vector3(transform.position.x, m_CapsuleCollider.bounds.min.y, transform.position.z);
+        Ray ray = new Ray(rayOrigin, Vector3.down);
         RaycastHit hit;
 
         if (Physics.Raycast(ray, out hit, Mathf.Infinity))
@@ -69,16 +72,10 @@ public class Character : MonoBehaviour
             {
                 m_Rigidbody.useGravity = true;
             }
-        }
-    }
-
-    protected void OnCollisionEnter(Collision a_Other)
-    {
-        Solid solid = a_Other.collider.GetComponent<Solid>();
-
-        if (solid is Solid)
-        {
-            m_Rigidbody.useGravity = false;
+            else
+            {
+                m_Rigidbody.useGravity = false;
+            }
         }
     }
 }
