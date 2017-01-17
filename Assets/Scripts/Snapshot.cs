@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using UnityStandardAssets.ImageEffects;
 
 public class Snapshot : MonoBehaviour {
 
@@ -15,20 +16,69 @@ public class Snapshot : MonoBehaviour {
     // The list of snapshots
     public List<string> snapshots = new List<string>();
 
-	// Use this for initialization
-	void Start ()
-    {
+    // Camera effects
 
+    Camera camera;
+
+    private float minFOV = 30;
+    private float maxFOV = 60;
+    private float modifFOV = 1;
+
+    // Fake Focus
+    private DepthOfField deptOfField;
+
+    private bool currentlyZoomIn = false;
+    private bool currentlyZoomOut = false;
+
+    // Use this for initialization
+    void Start ()
+    {
+        camera = GetComponent<Camera>();
+        deptOfField = GetComponent<DepthOfField>();
     }
 
     // Update is called once per frame
     void Update ()
     {
-	    if(Input.GetMouseButtonDown(0))
+	    if(Input.GetMouseButton(0))
         {
-            TakeAScreenShot();
+            ZoomIn();
+
+            if (currentlyZoomIn == false)
+            {
+                currentlyZoomIn = true;
+                StopAllCoroutines();
+                StartCoroutine(Focus(false));
+            }
+                
         }
-	}
+        else
+        {
+            if (currentlyZoomIn == true)
+            {
+                currentlyZoomIn = false;
+                StopAllCoroutines();
+                StartCoroutine(Focus(true));
+            }
+        }
+
+        if (Input.GetMouseButton(1))
+        {
+            ZoomOut();
+            currentlyZoomOut = true;
+            StopAllCoroutines();
+            StartCoroutine(Focus(false));
+        }
+        else
+        {
+            if (currentlyZoomIn == true)
+            {
+                currentlyZoomIn = false;
+                StopAllCoroutines();
+                StartCoroutine(Focus(true));
+            }
+        }
+    }
 
     void TakeAScreenShot()
     {
@@ -67,6 +117,48 @@ public class Snapshot : MonoBehaviour {
         }
 
         snapshots = new List<string>();
+    }
+
+    // Camera effects
+    void ZoomIn()
+    {
+        if(camera.fieldOfView> minFOV)
+        {
+            camera.fieldOfView -= modifFOV;
+        }
+
+    }
+
+    void ZoomOut()
+    {
+        if (camera.fieldOfView < maxFOV)
+        {
+            camera.fieldOfView += modifFOV;
+        }
+    }
+
+    IEnumerator Focus(bool _focus)
+    {
+        if(_focus)
+        {
+            while (deptOfField.aperture < 1)
+            {
+                deptOfField.aperture += 0.1f;
+
+                yield return new WaitForSeconds(0.1f);
+            }
+        }
+        else
+        {
+            while (deptOfField.aperture > 0)
+            {
+                deptOfField.aperture -= 0.1f;
+
+                yield return new WaitForSeconds(0.1f);
+            }
+        }
+
+        yield return new WaitForEndOfFrame();
     }
 
 }
