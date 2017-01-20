@@ -3,10 +3,14 @@ using System.Collections.Generic;
 
 public class Boid : BoidsParameters
 {
+    #region Variables
     [SerializeField]
     private float m_RotationSpeed;
-    [SerializeField]
-    private float m_MinimumDistanceToWaypoint;
+
+    public float m_SolidVelocityTimer;
+    public bool m_IsAvoiding;
+    private Vector3 m_SolidVelocity;
+    private float m_SolidVelocityTime;
 
     // Movement modifiers
     private float m_MaxVelocity = 1f;
@@ -34,6 +38,7 @@ public class Boid : BoidsParameters
 
     public Behaviour CurrentBehaviour { get; set; }
     public List<Boid> OtherBoids { get; set; }
+    #endregion Variables
 
     #region Modifiers
     public void SetMovementModifiers(float a_MaxVelocity, float a_MaxAvoidanceForce, float a_MaxSolidsAvoidanceForce, float a_AccelerationFactor, float a_DecelerationFactor)
@@ -55,6 +60,11 @@ public class Boid : BoidsParameters
     }
     #endregion Modifiers
 	
+    protected void Awake()
+    {
+        ResetSolidVelocityTime();
+    }
+
 	protected void FixedUpdate()
     {
         UpdateBehaviour();
@@ -73,7 +83,7 @@ public class Boid : BoidsParameters
 
         transform.position += m_CurrentVelocity;
 
-        m_Acceleration = Vector3.zero;
+        //m_Acceleration = Vector3.zero;
     }
     #endregion VelocityCalculation
 
@@ -86,7 +96,7 @@ public class Boid : BoidsParameters
 
     public void SetTargets(WaypointsManager a_WaypointsManager)
     {
-        for (int i = 0; i < a_WaypointsManager.Waypoints.Count - 1; i++)
+        for (int i = 0; i < a_WaypointsManager.Waypoints.Count; i++)
         {
             m_Targets.Add(a_WaypointsManager.Waypoints[i]);
         }
@@ -95,16 +105,14 @@ public class Boid : BoidsParameters
         m_CurrentTargetIndex = 0;
     }
 
+    private void ResetSolidVelocityTime()
+    {
+        m_SolidVelocityTime = m_SolidVelocityTimer;
+    }
+
     private void UpdateBehaviour()
     {
         // TO DO: Make sure it works with idle... Because I think it will not work.
-        if (CurrentBehaviour != Behaviour.Idle)
-        {
-            UpdateAcceleration(AvoidOtherBoids());
-            RotateTowardsDirection();
-            UpdateVelocity();
-        }
-
         switch(CurrentBehaviour)
         {
             case Behaviour.TakeOff:
@@ -112,6 +120,23 @@ public class Boid : BoidsParameters
                 break;
 
             case Behaviour.Fly:
+                UpdateAcceleration(AvoidOtherBoids());
+
+                if (m_IsAvoiding)
+                {
+                    UpdateAcceleration(m_SolidVelocity);
+
+                    if (m_SolidVelocityTime > 0f)
+                    {
+                        m_SolidVelocityTime -= Time.deltaTime;
+                    }
+                    else
+                    {
+                        m_IsAvoiding = false;
+                        ResetSolidVelocityTime();
+                    }
+                }
+
                 UpdateAcceleration(Fly());
                 break;
 
@@ -123,6 +148,12 @@ public class Boid : BoidsParameters
             default:
                 Idle();
                 break;
+        }
+
+        if (CurrentBehaviour != Behaviour.Idle)
+        {
+            RotateTowardsDirection();
+            UpdateVelocity();
         }
     }
 
@@ -170,7 +201,7 @@ public class Boid : BoidsParameters
 
         Vector3 steer = targetDirection - m_CurrentVelocity;
         steer *= m_ArriveFactor;
-        Vector3.ClampMagnitude(steer, m_MaxVelocity);
+        steer = Vector3.ClampMagnitude(steer, m_MaxVelocity);
         return steer;
     }
 
@@ -246,12 +277,18 @@ public class Boid : BoidsParameters
     private Vector3 DetermineSolidAvoidanceDirection(Collision a_Collision)
     {
         Vector3 steer = Vector3.zero;
-
-        Vector3 collisionNormal = a_Collision.contacts[0].normal;
-        float distanceToCollision = (transform.position - a_Collision.contacts[0].point).magnitude;
+        ContactPoint contactPoint = a_Collision.contacts[0];
+        Vector3 collisionNormal = contactPoint.normal;
 
         float angle = Vector3.Angle(collisionNormal, m_CurrentVelocity);
-        if (angle >= 0f)
+        float distanceToCollision = (transform.position - a_Collision.contacts[0].point).sqrMagnitude;
+        float multiplier = 0.2f + (distanceToCollision * 0.01f);
+
+        Debug.DrawRay(contactPoint.point, collisionNormal, Color.blue, 5f); // BLUE = NORMAL
+
+        steer = (collisionNormal + m_CurrentVelocity).normalized;
+
+        if (angle <= 30f)
         {
             steer += Vector3.right;
         }
@@ -260,25 +297,43 @@ public class Boid : BoidsParameters
             steer += Vector3.left;
         }
 
-        steer *= (1 / (distanceToCollision * m_BoidAvoidanceFactor) + 1);
+        if (transform.position.y * 1.25f > contactPoint.point.y)
+        {
+            steer += Vector3.up;
+        }
+      
+        steer *= multiplier;
         steer = Vector3.ClampMagnitude(steer, m_MaxSolidsAvoidanceForce);
+        Debug.DrawRay(transform.position, steer, Color.red, 5.0f); // RED = STEERING
 
-        Debug.DrawRay(transform.position, steer, Color.red, 5.0f);
+        m_IsAvoiding = true;
 
         return steer;
-
     }
 
     protected void OnCollisionStay(Collision a_Collision)
     {
-        Solid solid = a_Collision.gameObject.GetComponent<Solid>();
-
-        if (solid)
+        if (!m_IsAvoiding)
         {
-            UpdateAcceleration(DetermineSolidAvoidanceDirection(a_Collision));
+            Solid solid = a_Collision.gameObject.GetComponent<Solid>();
+
+            if (solid)
+            {
+                m_SolidVelocity = DetermineSolidAvoidanceDirection(a_Collision);
+            }
         }
     }
 
     #endregion AvoidanceBehaviours
     #endregion Behaviours
+
+    private void OnDrawGizmos()
+    {
+        if (m_CurrentTarget)
+        {
+            Gizmos.color = Color.cyan;
+            Gizmos.DrawLine(transform.position, m_CurrentTarget.transform.position);
+            Gizmos.DrawWireSphere(m_CurrentTarget.transform.position, 1f);
+        }
+    }
 }

@@ -80,7 +80,7 @@ public class BoidsManager : BoidsParameters
         for (int i = 0; i < m_NumberOfBoids; i++)
         {
             // TO DO: Find a better position to instantiate the boids!
-            Boid boid = Instantiate(m_Boid, new Vector3(i * 5, 0, i * 5), Quaternion.identity) as Boid;
+            Boid boid = Instantiate(m_Boid, new Vector3(Random.Range(-5f, 5f), Random.Range(-3f, 3f), Random.Range(-5f, 5f)), Quaternion.identity) as Boid;
             boid.transform.SetParent(m_BoidsContainer);
             m_Boids.Add(boid);
         }
