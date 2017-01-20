@@ -5,6 +5,8 @@ public class Boid : BoidsParameters
 {
     [SerializeField]
     private float m_RotationSpeed;
+    [SerializeField]
+    private float m_MinimumDistanceToWaypoint;
 
     // Movement modifiers
     private float m_MaxVelocity = 1f;
@@ -24,7 +26,9 @@ public class Boid : BoidsParameters
     private bool m_AvoidsSolid;
     private Solid m_SolidToAvoid;
 
-    private Transform m_Target;
+    private List<Transform> m_Targets = new List<Transform>();
+    private Transform m_CurrentTarget;
+    private int m_CurrentTargetIndex;
     private Vector3 m_Acceleration;
     private Vector3 m_CurrentVelocity;
 
@@ -65,7 +69,8 @@ public class Boid : BoidsParameters
     private void UpdateVelocity()
     {
         m_CurrentVelocity += m_Acceleration;
-        Vector3.ClampMagnitude(m_CurrentVelocity, m_MaxVelocity);
+        m_CurrentVelocity = Vector3.ClampMagnitude(m_CurrentVelocity, m_MaxVelocity);
+
         transform.position += m_CurrentVelocity;
 
         m_Acceleration = Vector3.zero;
@@ -79,9 +84,15 @@ public class Boid : BoidsParameters
         CurrentBehaviour = a_Behaviour;
     }
 
-    public void SetTarget(Transform a_Target)
+    public void SetTargets(WaypointsManager a_WaypointsManager)
     {
-        m_Target = a_Target;
+        for (int i = 0; i < a_WaypointsManager.Waypoints.Count - 1; i++)
+        {
+            m_Targets.Add(a_WaypointsManager.Waypoints[i]);
+        }
+
+        m_CurrentTarget = m_Targets[0];
+        m_CurrentTargetIndex = 0;
     }
 
     private void UpdateBehaviour()
@@ -129,7 +140,7 @@ public class Boid : BoidsParameters
 
     private Vector3 Fly()
     {
-        Vector3 targetDirection = m_Target.transform.position - transform.position;
+        Vector3 targetDirection = m_CurrentTarget.transform.position - transform.position;
 
         float distanceToTarget = targetDirection.sqrMagnitude;
         float maxSpeed = 0;
@@ -137,6 +148,17 @@ public class Boid : BoidsParameters
         if (distanceToTarget < m_MinimumDistanceToTarget)
         {
             maxSpeed = ExtensionMethods.Remap(m_MaxVelocity, 0, m_MaxVelocity, m_MaxVelocity, 0);
+
+            if (m_CurrentTargetIndex < m_Targets.Count - 1)
+            {
+                m_CurrentTargetIndex++;
+            }
+            else
+            {
+                m_CurrentTargetIndex = 0;
+            }
+
+            m_CurrentTarget = m_Targets[m_CurrentTargetIndex];
         }
         else
         {
@@ -191,7 +213,7 @@ public class Boid : BoidsParameters
 
             Vector3 steer = desiredVelocity - m_CurrentVelocity;
             steer *= m_BoidAvoidanceFactor;
-            Vector3.ClampMagnitude(steer, m_MaxBoidsAvoidanceForce);
+            steer = Vector3.ClampMagnitude(steer, m_MaxBoidsAvoidanceForce);
             return steer;
         }
 
@@ -213,7 +235,7 @@ public class Boid : BoidsParameters
 
         Vector3 steer = desiredVelocity - m_CurrentVelocity;
         steer *= m_SolidAvoidanceFactor;
-        Vector3.ClampMagnitude(steer, m_MaxBoidsAvoidanceForce);
+        steer = Vector3.ClampMagnitude(steer, m_MaxBoidsAvoidanceForce);
 
         // TO DO: Remove ; Debug purposes only
         //Debug.DrawLine(transform.position, steer, Color.yellow);
@@ -221,90 +243,39 @@ public class Boid : BoidsParameters
         return steer;
     }
 
-    private Vector3 DetermineSolidAvoidanceDirection(Collision a_Solid)
+    private Vector3 DetermineSolidAvoidanceDirection(Collision a_Collision)
     {
-        Vector3 desiredVelocity = Vector3.zero;
+        Vector3 steer = Vector3.zero;
 
-        Vector3 closestExitPoint = Vector3.zero;
-        float newClosestExitPointX = 0;
-        float newClosestExitPointY = 0;
-        float newClosestExitPointZ = 0;
+        Vector3 collisionNormal = a_Collision.contacts[0].normal;
+        float distanceToCollision = (transform.position - a_Collision.contacts[0].point).magnitude;
 
-        Vector3 closestCollisionPoint = a_Solid.contacts[0].point;
-        Vector3 centerOfCollisionCollider = a_Solid.collider.bounds.center;
-
-        // X desired velocity
-        if (closestCollisionPoint.x <= a_Solid.collider.bounds.center.x)
+        float angle = Vector3.Angle(collisionNormal, m_CurrentVelocity);
+        if (angle >= 0f)
         {
-            //print("X - INFERIOR");
-            //newClosestExitPointX = a_Solid.collider.bounds.min.x;
-            newClosestExitPointX = -1;
+            steer += Vector3.right;
         }
         else
         {
-            //print("X - SUPERIOR");
-            //newClosestExitPointX = a_Solid.collider.bounds.max.x;
-            newClosestExitPointX = 1;
+            steer += Vector3.left;
         }
 
-        // Y desired velocity
-        if (closestCollisionPoint.y <= a_Solid.collider.bounds.center.y)
-        {
-            Ray ray = new Ray(transform.position, -Vector3.up);
-            RaycastHit hit;
+        steer *= (1 / (distanceToCollision * m_BoidAvoidanceFactor) + 1);
+        steer = Vector3.ClampMagnitude(steer, m_MaxSolidsAvoidanceForce);
 
-            if (Physics.Raycast(ray, out hit, Mathf.Infinity, 8))
-            {
-                //print("Y - INFERIOR + GROUND");
-                //newClosestExitPointY = a_Solid.collider.bounds.max.y + 1f;
-                newClosestExitPointY = 1;
-            }
-            else
-            {
-                //print("Y - INFERIOR");
-                //newClosestExitPointY = a_Solid.collider.bounds.min.y - 1f;
-                newClosestExitPointY = -1;
-            }
-        }
-        else
-        {
-            //print("Y - SUPERIOR");
-            //newClosestExitPointY = a_Solid.collider.bounds.max.y + 1f;
-            newClosestExitPointY = 1;
-        }
-
-        // Z desired velocity
-        if (closestCollisionPoint.z <= a_Solid.collider.bounds.center.z)
-        {
-            //print("Z - INFERIOR");
-            //newClosestExitPointZ = a_Solid.collider.bounds.min.z;
-            newClosestExitPointZ = -1;
-        }
-        else
-        {
-            //print("Z - SUPERIOR");
-            //newClosestExitPointZ = a_Solid.collider.bounds.max.z;
-            newClosestExitPointZ = 1;
-        }
-
-        desiredVelocity = closestCollisionPoint + new Vector3(newClosestExitPointX, newClosestExitPointY, newClosestExitPointZ).normalized * 0.02f;
-
-        Vector3 steer = desiredVelocity - m_CurrentVelocity;
-        steer *= m_SolidAvoidanceFactor;
-        Vector3.ClampMagnitude(steer, m_MaxSolidsAvoidanceForce);
-
-        // TO DO: Remove ; Debug purposes only
-        Debug.DrawLine(transform.position, steer, Color.yellow);
+        Debug.DrawRay(transform.position, steer, Color.red, 5.0f);
 
         return steer;
+
     }
 
-    protected void OnCollisionStay(Collision a_Solid)
+    protected void OnCollisionStay(Collision a_Collision)
     {
-        if (a_Solid.gameObject.layer == 9)
+        Solid solid = a_Collision.gameObject.GetComponent<Solid>();
+
+        if (solid)
         {
-            print("Allo");
-            UpdateAcceleration(DetermineSolidAvoidanceDirection(a_Solid));
+            UpdateAcceleration(DetermineSolidAvoidanceDirection(a_Collision));
         }
     }
 

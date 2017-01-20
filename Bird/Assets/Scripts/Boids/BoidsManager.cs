@@ -33,7 +33,7 @@ public class BoidsManager : BoidsParameters
     [SerializeField]
     private Transform m_BoidsContainer;
     [SerializeField]
-    private Transform m_InitialTarget;
+    private WaypointsManager m_InitialWaypointsTrack;
 
     private List<Boid> m_Boids = new List<Boid>();
 
@@ -69,7 +69,7 @@ public class BoidsManager : BoidsParameters
     {
         CreateBoids();
         BoidListToIndividualBoids();
-        SetBoidsTarget(m_InitialTarget);
+        SetBoidsWaypoints();
         SetBoidsBehaviour(Behaviour.Fly);
         SetBoidsBehaviourModifiers();
         SetBoidsMovementModifiers();
@@ -103,11 +103,11 @@ public class BoidsManager : BoidsParameters
         }
     }
 
-    private void SetBoidsTarget(Transform a_Target)
+    private void SetBoidsWaypoints()
     {
         foreach (Boid boid in m_Boids)
         {
-            boid.SetTarget(a_Target);
+            boid.SetTargets(m_InitialWaypointsTrack);
         }
     }
 
