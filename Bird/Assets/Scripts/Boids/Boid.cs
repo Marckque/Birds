@@ -83,7 +83,7 @@ public class Boid : BoidsParameters
 
         transform.position += m_CurrentVelocity;
 
-        //m_Acceleration = Vector3.zero;
+        m_Acceleration = Vector3.zero;
     }
     #endregion VelocityCalculation
 
@@ -103,11 +103,6 @@ public class Boid : BoidsParameters
 
         m_CurrentTarget = m_Targets[0];
         m_CurrentTargetIndex = 0;
-    }
-
-    private void ResetSolidVelocityTime()
-    {
-        m_SolidVelocityTime = m_SolidVelocityTimer;
     }
 
     private void UpdateBehaviour()
@@ -251,27 +246,17 @@ public class Boid : BoidsParameters
         return Vector3.zero;
     }
 
-    private Vector3 AvoidSolid(Collision a_Solid)
+    protected void OnCollisionStay(Collision a_Collision)
     {
-        Vector3 desiredVelocity = Vector3.zero;
-        Vector3 closestPoint = a_Solid.contacts[0].point;
+        if (!m_IsAvoiding)
+        {
+            Solid solid = a_Collision.gameObject.GetComponent<Solid>();
 
-        Vector3 oppositeDirection = transform.position - closestPoint;
-
-        float distanceToSolid = oppositeDirection.sqrMagnitude;
-
-        oppositeDirection.Normalize();
-        oppositeDirection /= distanceToSolid;
-        desiredVelocity += oppositeDirection;
-
-        Vector3 steer = desiredVelocity - m_CurrentVelocity;
-        steer *= m_SolidAvoidanceFactor;
-        steer = Vector3.ClampMagnitude(steer, m_MaxBoidsAvoidanceForce);
-
-        // TO DO: Remove ; Debug purposes only
-        //Debug.DrawLine(transform.position, steer, Color.yellow);
-
-        return steer;
+            if (solid)
+            {
+                m_SolidVelocity = DetermineSolidAvoidanceDirection(a_Collision);
+            }
+        }
     }
 
     private Vector3 DetermineSolidAvoidanceDirection(Collision a_Collision)
@@ -311,17 +296,9 @@ public class Boid : BoidsParameters
         return steer;
     }
 
-    protected void OnCollisionStay(Collision a_Collision)
+    private void ResetSolidVelocityTime()
     {
-        if (!m_IsAvoiding)
-        {
-            Solid solid = a_Collision.gameObject.GetComponent<Solid>();
-
-            if (solid)
-            {
-                m_SolidVelocity = DetermineSolidAvoidanceDirection(a_Collision);
-            }
-        }
+        m_SolidVelocityTime = m_SolidVelocityTimer;
     }
 
     #endregion AvoidanceBehaviours

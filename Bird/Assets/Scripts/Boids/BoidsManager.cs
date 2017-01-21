@@ -3,6 +3,8 @@ using System.Collections.Generic;
 
 public class BoidsManager : BoidsParameters
 {
+    #region Variables
+    #region BoidsParameters
     [Header("Boids parameters"), SerializeField, Range(0.001f, 10f)]
     private float m_MaxVelocity = 1f;
     [SerializeField, Range(0.001f, 10f)]
@@ -25,6 +27,7 @@ public class BoidsManager : BoidsParameters
     private float m_MinimumDistanceToTarget = 1f;
     [SerializeField, Range(0.001f, 10f)]
     private float m_MinimumDistanceToOtherBoid = 1f;
+    #endregion  
 
     [Header("BoidsManager parameters"), SerializeField]
     private Boid m_Boid;
@@ -33,7 +36,7 @@ public class BoidsManager : BoidsParameters
     [SerializeField]
     private Transform m_BoidsContainer;
     [SerializeField]
-    private WaypointsManager m_InitialWaypointsTrack;
+    private WaypointsManager m_WaypointsManager;
 
     private List<Boid> m_Boids = new List<Boid>();
 
@@ -59,6 +62,7 @@ public class BoidsManager : BoidsParameters
     #endregion Singleton
 
     public List<Boid> Boids { get { return m_Boids; } }
+    #endregion
 
     protected void Start()
     {
@@ -107,7 +111,15 @@ public class BoidsManager : BoidsParameters
     {
         foreach (Boid boid in m_Boids)
         {
-            boid.SetTargets(m_InitialWaypointsTrack);
+            boid.SetTargets(m_WaypointsManager);
+        }
+    }
+
+    private void SetBoidsLandingSpots()
+    {
+        foreach (Boid boid in m_Boids)
+        {
+            
         }
     }
 
