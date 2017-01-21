@@ -2,6 +2,8 @@
 
 public class MouseControls : MonoBehaviour
 {
+    public Quaternion m_TestRotation;
+
     [Header("Mouse"), SerializeField]
     private float m_MouseSpeedX;
     [SerializeField]
@@ -24,11 +26,17 @@ public class MouseControls : MonoBehaviour
     {
         InitialiseMouse();
         InitialiseTargetRotation();
+        InitialiseCameraPosition();
     }
 
     private void InitialiseMouse()
     {
         Cursor.lockState = CursorLockMode.Locked;
+    }
+
+    private void InitialiseCameraPosition()
+    {
+        m_CameraTransform.localPosition = new Vector3(0, m_CameraOffsetY, -m_CameraOffsetZ);
     }
 
     private void InitialiseTargetRotation()
@@ -95,10 +103,5 @@ public class MouseControls : MonoBehaviour
         a_CameraRotation.x = Mathf.Tan(0.5f * Mathf.Deg2Rad * angleX);
 
         return a_CameraRotation;
-    }
-
-    protected void OnValidate()
-    {
-        m_CameraTransform.localPosition = new Vector3(0, m_CameraOffsetY, -m_CameraOffsetZ);
     }
 }
