@@ -9,6 +9,12 @@ public class Boid : BoidsParameters
     private float m_RotationSpeed;
     [SerializeField]
     private float m_MinimumLandingDistance;
+    [SerializeField]
+    private float m_LandingTimer;
+    [SerializeField]
+    private float m_LandingChance;
+    [SerializeField]
+    private float m_LandingDuration;
 
     public float m_SolidVelocityTimer;
     public bool m_IsAvoiding;
@@ -122,9 +128,9 @@ public class Boid : BoidsParameters
     {
         float chanceToLand = 0;
 
-        while (chanceToLand < 5f)
+        while (chanceToLand < m_LandingChance)
         {
-            yield return new WaitForSeconds(1f);
+            yield return new WaitForSeconds(m_LandingTimer);
             chanceToLand = Random.Range(0f, 100f);
         }
 
@@ -138,6 +144,16 @@ public class Boid : BoidsParameters
                 break;
             }
         }
+    }
+
+    private IEnumerator BackToFlyState()
+    {
+        yield return new WaitForSeconds(m_LandingDuration);
+
+        UpdateCurrentTargetIndex();
+
+        StartCoroutine(CheckIfCanLand());
+        CurrentBehaviour = Behaviour.Fly;
     }
 
     private void UpdateBehaviour()
@@ -187,11 +203,25 @@ public class Boid : BoidsParameters
         }
     }
 
+    private void UpdateCurrentTargetIndex()
+    {
+        if (m_CurrentTargetIndex < m_Waypoint.Count - 1)
+        {
+            m_CurrentTargetIndex++;
+        }
+        else
+        {
+            m_CurrentTargetIndex = 0;
+        }
+
+        m_CurrentTarget = m_Waypoint[m_CurrentTargetIndex];
+    }
+
     #region BasedOnBehaviourEnum
     // Based on: private enum Behaviour { Idle, TakeOff, Fly, Land };
     private void Idle()
     {
-        print("I'm not moving !");
+        StartCoroutine(BackToFlyState());
     }
 
     private void TakeOff()
@@ -210,18 +240,7 @@ public class Boid : BoidsParameters
 
         if (distanceToTarget < m_MinimumDistanceToTarget)
         {
-            //maxSpeed = ExtensionMethods.Remap(m_MaxVelocity, 0, m_MaxVelocity, m_MaxVelocity, 0);
-
-            if (m_CurrentTargetIndex < m_Waypoint.Count - 1)
-            {
-                m_CurrentTargetIndex++;
-            }
-            else
-            {
-                m_CurrentTargetIndex = 0;
-            }
-
-            m_CurrentTarget = m_Waypoint[m_CurrentTargetIndex];
+            UpdateCurrentTargetIndex();
         }
         else
         {
@@ -240,7 +259,7 @@ public class Boid : BoidsParameters
     private Vector3 Land()
     {
         Vector3 targetDirection = m_CurrentTarget.transform.position - transform.position;
-        targetDirection += Vector3.up * 0.5f;
+        targetDirection += Vector3.up * 0.25f;
 
         float distanceToTarget = targetDirection.sqrMagnitude;
         float maxSpeed = 0;
@@ -262,6 +281,7 @@ public class Boid : BoidsParameters
         Vector3 steer = targetDirection - m_CurrentVelocity;
         steer *= m_ArriveFactor;
         steer = Vector3.ClampMagnitude(steer, m_MaxVelocity);
+
         return steer;
     }
     #endregion BasedOnBehaviourEnum
