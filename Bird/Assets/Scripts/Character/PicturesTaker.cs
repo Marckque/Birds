@@ -1,15 +1,24 @@
-﻿using UnityEngine;
+﻿using System.IO;
+using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 using UnityStandardAssets.ImageEffects;
 
 [RequireComponent(typeof(Camera))]
 [RequireComponent(typeof(DepthOfField))]
+[RequireComponent(typeof(VignetteAndChromaticAberration))]
 public class PicturesTaker : MonoBehaviour
 {
     #region Variables
     [Header("UI"), SerializeField]
     private Canvas m_CameraCanvas;
+
+    [Header("Screenshot"), SerializeField]
+    private string m_FileName;
+    [SerializeField, Range(1, 4)]
+    private int m_ScreenshotQuality;
+
+    private int m_CurrentScreenshotIndex = 0;
 
     [Header("Zoom"), SerializeField]
     private float m_ZoomIncrement;
@@ -33,12 +42,14 @@ public class PicturesTaker : MonoBehaviour
     
     private Camera m_Camera;
     private DepthOfField m_DepthOfField;
+    private VignetteAndChromaticAberration m_VignetteAndChromaticAberration;
     #endregion
 
     protected void Awake()
     {
         m_Camera = GetComponent<Camera>();
         m_DepthOfField = GetComponent<DepthOfField>();
+        m_VignetteAndChromaticAberration = GetComponent<VignetteAndChromaticAberration>();
 
         InitialiseFieldOfViewVariables();
     }
@@ -54,6 +65,11 @@ public class PicturesTaker : MonoBehaviour
     {
         CameraInputs();
         UpdateCamera();
+    }
+
+    protected void LateUpdate()
+    {
+        TakeScreenshot();
     }
 
     private void CameraInputs()
@@ -73,12 +89,17 @@ public class PicturesTaker : MonoBehaviour
         if (m_IsCameraInUse)
         {
             CameraZoom();
+            
+            SetFieldOfViewToValue(m_TargetFieldOfView);
+
             ActivateCameraUI();
-            SetFieldOfViewToValue(m_LastFieldOfView);
+            ActivateVignetteAndChromaticAberration();
         }
         else
         {
             DeactivateCameraUI();
+            DeactivateVignetteAndChromaticAberration();
+
             SetFieldOfViewToValue(m_DefaultFieldOfView);
         }
     }
@@ -96,20 +117,17 @@ public class PicturesTaker : MonoBehaviour
     #region FieldOfView
     private void CameraZoom()
     {
-        if (m_IsCameraInUse)
+        if (Input.GetKey(KeyCode.E))
         {
-            if (Input.GetKey(KeyCode.E))
-            {
-                UpdateTargetFieldOfView(-m_ZoomIncrement);
-            }
-            else if (Input.GetKey(KeyCode.R))
-            {
-                UpdateTargetFieldOfView(m_ZoomIncrement);
-            }
-
-            UpdateCameraLastFieldOfView();
-            UpdateCameraFieldOfView();
+            UpdateTargetFieldOfView(m_ZoomIncrement);
         }
+        else if (Input.GetKey(KeyCode.R))
+        {
+            UpdateTargetFieldOfView(-m_ZoomIncrement);
+        }
+
+        UpdateCameraLastFieldOfView();
+        UpdateCameraFieldOfView();
     }
 
     private void UpdateCameraFieldOfView()
@@ -133,6 +151,47 @@ public class PicturesTaker : MonoBehaviour
     private void SetFieldOfViewToValue(float a_Value)
     {
         m_Camera.fieldOfView = a_Value;
+    }
+    #endregion
+
+    #region Chromatic aberration
+    private void ActivateVignetteAndChromaticAberration()
+    {
+        m_VignetteAndChromaticAberration.enabled = true;
+    }
+
+    private void DeactivateVignetteAndChromaticAberration()
+    {
+        m_VignetteAndChromaticAberration.enabled = false;
+    }
+    #endregion
+
+    #region FocusTarget
+    private void SetNewFocusTarget()
+    {
+        Ray ray = new Ray(transform.position, m_Camera.transform.forward);
+        RaycastHit hit;
+
+        if (Physics.Raycast(ray, out hit))
+        {
+            m_DepthOfField.focalTransform = hit.transform;
+        }
+    }
+    #endregion
+
+    #region CapturePicture
+    private void TakeScreenshot()
+    {
+        if (m_IsCameraInUse && Input.GetMouseButtonDown(0))
+        {
+            Application.CaptureScreenshot(m_FileName + m_CurrentScreenshotIndex.ToString() + ".png", m_ScreenshotQuality);
+
+            if (File.Exists(m_FileName + m_CurrentScreenshotIndex.ToString()))
+            {
+                File.Move(Application.persistentDataPath, "/Screenshots/");
+                m_CurrentScreenshotIndex++;
+            }
+        }
     }
     #endregion
 }

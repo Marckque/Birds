@@ -42,6 +42,7 @@ public class Boid : BoidsParameters
     private List<Transform> m_Waypoint = new List<Transform>();
     private List<LandingSpot> m_LandingSpots = new List<LandingSpot>();
     private Transform m_CurrentTarget;
+    private int m_CurrentLandingSpotIndex;
     private int m_CurrentTargetIndex;
     private Vector3 m_Acceleration;
     private Vector3 m_CurrentVelocity;
@@ -126,12 +127,12 @@ public class Boid : BoidsParameters
 
     private IEnumerator CheckIfCanLand()
     {
-        float chanceToLand = 0;
+        int chanceToLand = 0;
 
         while (chanceToLand < m_LandingChance)
         {
             yield return new WaitForSeconds(m_LandingTimer);
-            chanceToLand = Random.Range(0f, 100f);
+            chanceToLand = Random.Range(0, 100);
         }
 
         for (int i = 0; i < m_LandingSpots.Count; i++)
@@ -141,6 +142,7 @@ public class Boid : BoidsParameters
                 m_LandingSpots[i].LandedBoid = this;
                 CurrentBehaviour = Behaviour.Land;
                 m_CurrentTarget = m_LandingSpots[i].transform;
+                m_CurrentLandingSpotIndex = i;
                 break;
             }
         }
@@ -154,6 +156,8 @@ public class Boid : BoidsParameters
 
         StartCoroutine(CheckIfCanLand());
         CurrentBehaviour = Behaviour.Fly;
+
+        m_LandingSpots[m_CurrentLandingSpotIndex].LandedBoid = null;
     }
 
     private void UpdateBehaviour()
