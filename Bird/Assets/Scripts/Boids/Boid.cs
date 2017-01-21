@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+using System.Collections;
 using System.Collections.Generic;
 
 public class Boid : BoidsParameters
@@ -6,6 +7,8 @@ public class Boid : BoidsParameters
     #region Variables
     [SerializeField]
     private float m_RotationSpeed;
+    [SerializeField]
+    private float m_MinimumLandingDistance;
 
     public float m_SolidVelocityTimer;
     public bool m_IsAvoiding;
@@ -17,7 +20,7 @@ public class Boid : BoidsParameters
     private float m_MaxBoidsAvoidanceForce = 1f;
     private float m_MaxSolidsAvoidanceForce = 1f;
     private float m_AccelerationFactor = 1f;
-    private float m_DecelerationFactor = 1f;  
+    private float m_DecelerationFactor = 1f;
 
     // Behavior modifiers
     private float m_ArriveFactor = 1f;
@@ -30,7 +33,8 @@ public class Boid : BoidsParameters
     private bool m_AvoidsSolid;
     private Solid m_SolidToAvoid;
 
-    private List<Transform> m_Targets = new List<Transform>();
+    private List<Transform> m_Waypoint = new List<Transform>();
+    private List<LandingSpot> m_LandingSpots = new List<LandingSpot>();
     private Transform m_CurrentTarget;
     private int m_CurrentTargetIndex;
     private Vector3 m_Acceleration;
@@ -59,16 +63,17 @@ public class Boid : BoidsParameters
         m_MinimumDistanceToOtherBoid = a_MinimumDistanceToOtherBoid;
     }
     #endregion Modifiers
-	
+
     protected void Awake()
     {
         ResetSolidVelocityTime();
+        StartCoroutine(CheckIfCanLand());
     }
 
-	protected void FixedUpdate()
+    protected void FixedUpdate()
     {
         UpdateBehaviour();
-	}
+    }
 
     #region VelocityCalculation
     private void UpdateAcceleration(Vector3 a_Force)
@@ -98,17 +103,47 @@ public class Boid : BoidsParameters
     {
         for (int i = 0; i < a_WaypointsManager.Waypoints.Count; i++)
         {
-            m_Targets.Add(a_WaypointsManager.Waypoints[i]);
+            m_Waypoint.Add(a_WaypointsManager.Waypoints[i]);
         }
 
-        m_CurrentTarget = m_Targets[0];
+        m_CurrentTarget = m_Waypoint[0];
         m_CurrentTargetIndex = 0;
+    }
+
+    public void SetLandingSpots(WaypointsManager a_WaypointsManager)
+    {
+        for (int i = 0; i < a_WaypointsManager.LandingSpots.Count; i++)
+        {
+            m_LandingSpots.Add(a_WaypointsManager.LandingSpots[i]);
+        }
+    }
+
+    private IEnumerator CheckIfCanLand()
+    {
+        float chanceToLand = 0;
+
+        while (chanceToLand < 5f)
+        {
+            yield return new WaitForSeconds(1f);
+            chanceToLand = Random.Range(0f, 100f);
+        }
+
+        for (int i = 0; i < m_LandingSpots.Count; i++)
+        {
+            if (m_LandingSpots[i].LandedBoid == null)
+            {
+                m_LandingSpots[i].LandedBoid = this;
+                CurrentBehaviour = Behaviour.Land;
+                m_CurrentTarget = m_LandingSpots[i].transform;
+                break;
+            }
+        }
     }
 
     private void UpdateBehaviour()
     {
         // TO DO: Make sure it works with idle... Because I think it will not work.
-        switch(CurrentBehaviour)
+        switch (CurrentBehaviour)
         {
             case Behaviour.TakeOff:
                 TakeOff();
@@ -136,7 +171,7 @@ public class Boid : BoidsParameters
                 break;
 
             case Behaviour.Land:
-                Land();
+                UpdateAcceleration(Land());
                 break;
 
             case Behaviour.Idle:
@@ -156,7 +191,7 @@ public class Boid : BoidsParameters
     // Based on: private enum Behaviour { Idle, TakeOff, Fly, Land };
     private void Idle()
     {
-        // Stand still
+        print("I'm not moving !");
     }
 
     private void TakeOff()
@@ -171,11 +206,13 @@ public class Boid : BoidsParameters
         float distanceToTarget = targetDirection.sqrMagnitude;
         float maxSpeed = 0;
 
+        maxSpeed = ExtensionMethods.Remap(m_MaxVelocity, 0, m_MaxVelocity, m_MaxVelocity, 0);
+
         if (distanceToTarget < m_MinimumDistanceToTarget)
         {
-            maxSpeed = ExtensionMethods.Remap(m_MaxVelocity, 0, m_MaxVelocity, m_MaxVelocity, 0);
+            //maxSpeed = ExtensionMethods.Remap(m_MaxVelocity, 0, m_MaxVelocity, m_MaxVelocity, 0);
 
-            if (m_CurrentTargetIndex < m_Targets.Count - 1)
+            if (m_CurrentTargetIndex < m_Waypoint.Count - 1)
             {
                 m_CurrentTargetIndex++;
             }
@@ -184,7 +221,7 @@ public class Boid : BoidsParameters
                 m_CurrentTargetIndex = 0;
             }
 
-            m_CurrentTarget = m_Targets[m_CurrentTargetIndex];
+            m_CurrentTarget = m_Waypoint[m_CurrentTargetIndex];
         }
         else
         {
@@ -200,9 +237,32 @@ public class Boid : BoidsParameters
         return steer;
     }
 
-    private void Land()
+    private Vector3 Land()
     {
+        Vector3 targetDirection = m_CurrentTarget.transform.position - transform.position;
+        targetDirection += Vector3.up * 0.5f;
 
+        float distanceToTarget = targetDirection.sqrMagnitude;
+        float maxSpeed = 0;
+
+        maxSpeed = ExtensionMethods.Remap(m_MaxVelocity, 0, m_MaxVelocity, m_MaxVelocity, 0);
+
+        if (distanceToTarget < m_MinimumLandingDistance)
+        {
+            CurrentBehaviour = Behaviour.Idle;
+        }
+        else
+        {
+            maxSpeed = m_MaxVelocity;
+        }
+
+        targetDirection.Normalize();
+        targetDirection *= maxSpeed;
+
+        Vector3 steer = targetDirection - m_CurrentVelocity;
+        steer *= m_ArriveFactor;
+        steer = Vector3.ClampMagnitude(steer, m_MaxVelocity);
+        return steer;
     }
     #endregion BasedOnBehaviourEnum
 
@@ -286,7 +346,7 @@ public class Boid : BoidsParameters
         {
             steer += Vector3.up;
         }
-      
+
         steer *= multiplier;
         steer = Vector3.ClampMagnitude(steer, m_MaxSolidsAvoidanceForce);
         Debug.DrawRay(transform.position, steer, Color.red, 5.0f); // RED = STEERING
@@ -308,7 +368,15 @@ public class Boid : BoidsParameters
     {
         if (m_CurrentTarget)
         {
-            Gizmos.color = Color.cyan;
+            if (CurrentBehaviour == Behaviour.Fly)
+            {
+                Gizmos.color = Color.cyan;
+            }
+            else
+            {
+                Gizmos.color = Color.white;
+            }
+
             Gizmos.DrawLine(transform.position, m_CurrentTarget.transform.position);
             Gizmos.DrawWireSphere(m_CurrentTarget.transform.position, 1f);
         }

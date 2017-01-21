@@ -12,10 +12,10 @@ public class WaypointsManager : MonoBehaviour
     private Transform m_LandingSpotsContainer;
     
     private List<Transform> m_Waypoints = new List<Transform>();
-    private List<Transform> m_LandingSpots = new List<Transform>();
+    private List<LandingSpot> m_LandingSpots = new List<LandingSpot>();
 
     public List<Transform> Waypoints { get { return m_Waypoints; } }
-    public List<Transform> LandingSpots { get { return m_LandingSpots; } }
+    public List<LandingSpot> LandingSpots { get { return m_LandingSpots; } }
 
     protected void Awake()
     {
@@ -53,7 +53,7 @@ public class WaypointsManager : MonoBehaviour
 
         for (int i = 0; i < m_LandingSpotsContainer.childCount; i++)
         {
-            m_LandingSpots.Add(m_LandingSpotsContainer.GetChild(i).GetComponent<Transform>());
+            m_LandingSpots.Add(m_LandingSpotsContainer.GetChild(i).GetComponent<LandingSpot>());
         }
     }
 

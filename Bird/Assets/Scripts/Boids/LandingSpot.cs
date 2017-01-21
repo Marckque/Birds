@@ -2,5 +2,5 @@
 
 public class LandingSpot : MonoBehaviour
 {
-    public Boid LandingSpotIsUsed { get; set; }
+    public Boid LandedBoid { get; set; }
 }

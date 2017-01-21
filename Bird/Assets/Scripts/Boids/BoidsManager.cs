@@ -74,6 +74,7 @@ public class BoidsManager : BoidsParameters
         CreateBoids();
         BoidListToIndividualBoids();
         SetBoidsWaypoints();
+        SetBoidsLandingSpots();
         SetBoidsBehaviour(Behaviour.Fly);
         SetBoidsBehaviourModifiers();
         SetBoidsMovementModifiers();
@@ -119,7 +120,7 @@ public class BoidsManager : BoidsParameters
     {
         foreach (Boid boid in m_Boids)
         {
-            
+            boid.SetLandingSpots(m_WaypointsManager);
         }
     }
 
