@@ -117,11 +117,11 @@ public class PicturesTaker : MonoBehaviour
     #region FieldOfView
     private void CameraZoom()
     {
-        if (Input.GetKey(KeyCode.E))
+        if (Input.GetAxis("Mouse ScrollWheel") < -0.01f)
         {
             UpdateTargetFieldOfView(m_ZoomIncrement);
         }
-        else if (Input.GetKey(KeyCode.R))
+        else if (Input.GetAxis("Mouse ScrollWheel") > 0.01f)
         {
             UpdateTargetFieldOfView(-m_ZoomIncrement);
         }
