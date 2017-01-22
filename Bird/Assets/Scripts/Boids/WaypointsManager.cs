@@ -10,6 +10,9 @@ public class WaypointsManager : MonoBehaviour
     private Transform m_WaypointsContainer;
     [SerializeField]
     private Transform m_LandingSpotsContainer;
+
+    [Header("Debug"), SerializeField]
+    private bool m_HighlightAllWaypoints;
     
     private List<Transform> m_Waypoints = new List<Transform>();
     private List<LandingSpot> m_LandingSpots = new List<LandingSpot>();
@@ -54,6 +57,19 @@ public class WaypointsManager : MonoBehaviour
         for (int i = 0; i < m_LandingSpotsContainer.childCount; i++)
         {
             m_LandingSpots.Add(m_LandingSpotsContainer.GetChild(i).GetComponent<LandingSpot>());
+        }
+    }
+
+    protected void OnDrawGizmos()
+    {
+        if (m_HighlightAllWaypoints)
+        {
+            Gizmos.color = Color.green;
+
+            foreach (Transform t in Waypoints)
+            {
+                Gizmos.DrawWireSphere(t.transform.position, 1f);
+            }
         }
     }
 

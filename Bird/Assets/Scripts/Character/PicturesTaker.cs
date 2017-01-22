@@ -4,6 +4,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityStandardAssets.ImageEffects;
 
+[RequireComponent(typeof(Bloom))]
 [RequireComponent(typeof(Camera))]
 [RequireComponent(typeof(DepthOfField))]
 [RequireComponent(typeof(VignetteAndChromaticAberration))]
@@ -43,15 +44,22 @@ public class PicturesTaker : MonoBehaviour
     private Camera m_Camera;
     private DepthOfField m_DepthOfField;
     private VignetteAndChromaticAberration m_VignetteAndChromaticAberration;
+    private BloomOptimized m_Bloom;
     #endregion
 
     protected void Awake()
     {
         m_Camera = GetComponent<Camera>();
+
+        GetImageEffects();
+        InitialiseFieldOfViewVariables();
+    }
+
+    private void GetImageEffects()
+    {
         m_DepthOfField = GetComponent<DepthOfField>();
         m_VignetteAndChromaticAberration = GetComponent<VignetteAndChromaticAberration>();
-
-        InitialiseFieldOfViewVariables();
+        m_Bloom = GetComponent<BloomOptimized>();
     }
 
     private void InitialiseFieldOfViewVariables()
@@ -92,11 +100,13 @@ public class PicturesTaker : MonoBehaviour
             
             SetFieldOfViewToValue(m_TargetFieldOfView);
 
+            ActivateBloom();
             ActivateCameraUI();
             ActivateVignetteAndChromaticAberration();
         }
         else
         {
+            DeactivateBloom();
             DeactivateCameraUI();
             DeactivateVignetteAndChromaticAberration();
 
@@ -165,6 +175,16 @@ public class PicturesTaker : MonoBehaviour
         m_VignetteAndChromaticAberration.enabled = false;
     }
     #endregion
+
+    private void ActivateBloom()
+    {
+        m_Bloom.enabled = true;
+    }
+
+    private void DeactivateBloom()
+    {
+        m_Bloom.enabled = false;
+    }
 
     #region FocusTarget
     private void SetNewFocusTarget()

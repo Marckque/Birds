@@ -84,13 +84,13 @@ public class MouseControls : MonoBehaviour
         float rotationY = Input.GetAxis("Mouse X") * m_MouseSpeedX;
         float rotationX = Input.GetAxis("Mouse Y") * m_MouseSpeedY;
 
-        m_TargetRotation *= Quaternion.Euler(0f, rotationY, 0f); // Y
-        m_CameraTargetRotation *= Quaternion.Euler(-rotationX, 0f, 0f); // X
+        m_TargetRotation *= Quaternion.Euler(0f, rotationY, 0f);
+        m_CameraTargetRotation *= Quaternion.Euler(-rotationX, 0f, 0f); 
 
         m_CameraTransform.localRotation = ClampCameraRotation(m_CameraTransform.localRotation);
 
         transform.localRotation = Quaternion.Slerp(transform.localRotation, m_TargetRotation, Time.deltaTime * m_SmoothSpeed);
-        m_CameraTransform.localRotation = Quaternion.Slerp(m_CameraTransform.localRotation, m_CameraTargetRotation, Time.deltaTime * m_SmoothSpeed); // cameraTransform = cameraRoot
+        m_CameraTransform.localRotation = Quaternion.Slerp(m_CameraTransform.localRotation, m_CameraTargetRotation, Time.deltaTime * m_SmoothSpeed);
     }
 
     private Quaternion ClampCameraRotation(Quaternion a_CameraRotation)

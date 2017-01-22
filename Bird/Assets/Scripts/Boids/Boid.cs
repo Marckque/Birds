@@ -37,7 +37,6 @@ public class Boid : BoidsParameters
 
     // Other
     private bool m_AvoidsSolid;
-    private Solid m_SolidToAvoid;
 
     private List<Transform> m_Waypoint = new List<Transform>();
     private List<LandingSpot> m_LandingSpots = new List<LandingSpot>();
@@ -77,7 +76,7 @@ public class Boid : BoidsParameters
         StartCoroutine(CheckIfCanLand());
     }
 
-    protected void FixedUpdate()
+    protected void Update()
     {
         UpdateBehaviour();
     }
@@ -143,18 +142,21 @@ public class Boid : BoidsParameters
                 CurrentBehaviour = Behaviour.Land;
                 m_CurrentTarget = m_LandingSpots[i].transform;
                 m_CurrentLandingSpotIndex = i;
-                break;
+                yield break;
             }
         }
+
+        yield return null;
     }
 
     private IEnumerator BackToFlyState()
     {
         yield return new WaitForSeconds(m_LandingDuration);
 
-        UpdateCurrentTargetIndex();
-
         StartCoroutine(CheckIfCanLand());
+
+        m_CurrentTarget = m_Waypoint[m_CurrentTargetIndex];
+
         CurrentBehaviour = Behaviour.Fly;
 
         m_LandingSpots[m_CurrentLandingSpotIndex].LandedBoid = null;
@@ -273,6 +275,7 @@ public class Boid : BoidsParameters
         if (distanceToTarget < m_MinimumLandingDistance)
         {
             CurrentBehaviour = Behaviour.Idle;
+            return Vector3.zero;
         }
         else
         {
